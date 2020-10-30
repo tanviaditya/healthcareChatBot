@@ -12,6 +12,10 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import svm
+import pickle
+from sklearn.naive_bayes import MultinomialNB,GaussianNB
 
 class DiseasePrediction:
 
@@ -24,22 +28,30 @@ class DiseasePrediction:
         
     def train_model(self):
         self._load_train_dataset()
-        X_train, X_val, y_train, y_val = train_test_split(self.train_features, self.train_labels,
-                                                          test_size=0.33,
-                                                          random_state=101)
-        classifier = MultinomialNB()
-        classifier = classifier.fit(X_train, y_train)
-        confidence = classifier.score(X_val, y_val)
+        X_train, X_val, y_train, y_test = train_test_split(self.train_features, self.train_labels,
+                                                          test_size=0.20,random_state=101)
+        clf2=RandomForestClassifier(n_estimators = 150)
+        # clf2=svm.SVC(kernel='rbf') 
 
-        y_pred = classifier.predict(X_val)
-        accuracy = accuracy_score(y_val, y_pred)
-        score = cross_val_score(classifier, X_val, y_val, cv=3)
-        print("Score ",score.mean())
-        dump(classifier, str('./saved_model/' + "mnb" + ".joblib"))
+        clf2.fit(X_train,y_train)
+        y_pred=clf2.predict(X_val)
+        # print("Ytest",y_test)
+        # print("YPred",y_pred)
+
+        print("Accuracy:",accuracy_score(y_test, y_pred))
+        
+        score = cross_val_score(clf2, X_val, y_test, cv=10)
+        print(score.mean())
+        clf_report = classification_report(y_test, y_pred)
+        # print(clf_report)
+        PIK='E:\Fifth Semester\MP\djangoChatbot\chatbot\model\RandomForest.pkl' 
+        with open(PIK, "wb") as f:
+            pickle.dump(clf2, f)      
+        
 
     def make_prediction(self, test_data, saved_model_name=None):
         try:
-            clf = load(str('./saved_model/'+ "mnb" + ".joblib"))
+            clf = load(str('E:\Fifth Semester\MP\djangoChatbot\chatbot\model\RandomForest.pkl'))
         except Exception as e:
             print("Model not found...")
         result = clf.predict(test_data)
@@ -56,13 +68,17 @@ class DiseasePrediction:
                 words.append(s)
         final_symps=list()
         symptoms_dataset = pd.read_csv('./dataset/Symptoms.csv')
-        self.symptoms_list= symptoms_dataset.iloc[:-1,-1].tolist()
+        self.symptoms_list= symptoms_dataset.Symptoms.tolist()
+        # print("Symptoms",self.symptoms_list,len(self.symptoms_list))
         for symp in self.symptoms_list:
+            s=""
+            symp=s.join(symp)
             arr=symp.split("_")
+            # print(arr,len(arr))
             for i,v in enumerate(arr):
                 arr[i]=v.strip()
             final_symps.append(arr)
-        final_symps
+        # print(final_symps,len(final_symps))
         symp=list()
         for i,w in enumerate(words):
             for j,s in enumerate(final_symps):
@@ -85,13 +101,18 @@ class DiseasePrediction:
 
     def inputNLP(self,symp):
         symptoms_dataset = pd.read_csv('./dataset/Symptoms.csv')
-        self.symptoms_list= symptoms_dataset.iloc[:-1,-1].tolist()
+        symptoms_dataset.columns=['Symptoms']
+        self.symptoms_list= symptoms_dataset.Symptoms.tolist()        
+        # print(self.symptoms_list)
         n=len(self.symptoms_list)
+        # print(n)
         final_input=[0 for i in range(n)]
         for s in symp:
             i=self.symptoms_list.index(s)
             final_input[i]=1
+        print(final_input)
         return final_input
 
 
 
+# [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]

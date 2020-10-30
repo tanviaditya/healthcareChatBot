@@ -5,7 +5,6 @@ import csv
 import pandas as pd
 
 def predictDisease(symp):
-    current_model_name = 'mnb'
     dp = DiseasePrediction()
     dp.train_model()
     test=dp.inputNLP(symp)
@@ -26,10 +25,10 @@ def getPrecautions(disease):
 
 if __name__ == "__main__":
     translator = Translator()
-    greetings=["Hi","hi","Hi there", "How are you", "Is anyone there?","Hey","Hola", "Hello", "Good day","Hey"]
+    greetings=["Hi","hi","Hi there", "How are you ?", "Is anyone there?","Hey","Hola", "Hello", "Good day","Hey"]
     greetings_response=["Hello", "Good to see you again", "Hi there, How can I help?","Hey"]
     exit_list=["Bye", "See you later", "Goodbye", "Nice chatting to you, bye", "Till next time","Thanks","Thank you"]
-    exit_respose= ["See you!", "Have a nice day", "Bye! Come back again soon.","Bye"]
+    exit_respose= ["See you!", "Have a nice day", "Bye!","Bye"]
     symptoms=list()
     flag=0
     print("Type 1 for English")
@@ -86,9 +85,11 @@ if __name__ == "__main__":
                     flag+=1
                 else:
                     res=predictDisease(symptoms)
-                    s="You maybe suffering from  "
-                    s=translator.translate(s, src='en', dest=lang).text
-                    res1=translator.translate(res[0], src='en', dest=lang).text
+                    res1=res[0]
+                    s="You maybe suffering from "
+                    if lang!='en':
+                        s=translator.translate(s, src='en', dest=lang).text
+                        res1=translator.translate(res1, src='en', dest=lang).text
                     print("Symptoms: ")
                     print(symptoms)
                     print(hcb+s+" "+res1)
